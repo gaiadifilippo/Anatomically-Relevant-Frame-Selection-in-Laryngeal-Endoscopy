@@ -12,7 +12,6 @@ import ipywidgets as widgets
 from IPython.display import display, clear_output
 
 
-# Link dataset: https://doi.org/10.5281/zenodo.1162784
 DATASET_FOLDER = "path/to/zenodo/endoscopic/frames"
 WORKSPACE_DIR = "./output_analysis"
 WEIGHTS_PATH = "./models/best_mlp_seed_99.pth"
@@ -46,22 +45,21 @@ mlp_model = MLP(input_dim=EMBEDDING_DIM).to(device)
 if os.path.exists(WEIGHTS_PATH):
     mlp_model.load_state_dict(torch.load(WEIGHTS_PATH, map_location=device))
     mlp_model.eval()
-    print(" Pesi del modello caricati con successo.")
+    print("Pre-trained model weights loaded successfully.")
 else:
-    print(" Pesi pre-addestrati non trovati. Verrà usato un modello non addestrato.")
+    print("Pre-trained weights not found. Starting with an uninitialized model.")
 
 def run_zenodo_inference():
-    """Processa i frame di Zenodo e crea il database degli embeddings."""
     os.makedirs(os.path.join(WORKSPACE_DIR, "INF"), exist_ok=True)
     os.makedirs(os.path.join(WORKSPACE_DIR, "NON_INF"), exist_ok=True)
     
     files = sorted([f for f in os.listdir(DATASET_FOLDER) if f.lower().endswith(('.jpg', '.png', '.jpeg'))])
-    if not files: return print("  Nessun frame trovato nel folder specificato.")
+    if not files: return print("No frames found in the specified folder.")
 
     embeddings_db = {}
     results = []
 
-    print(f" Analisi di {len(files)} frame in corso...")
+    print(f"Analyzing {len(files)} frames...")
     for f in files:
         img_path = os.path.join(DATASET_FOLDER, f)
         img = Image.open(img_path).convert('RGB')
@@ -81,7 +79,6 @@ def run_zenodo_inference():
   
     torch.save(embeddings_db, os.path.join(WORKSPACE_DIR, "embeddings_db.pt"))
     pd.DataFrame(results).to_csv(os.path.join(WORKSPACE_DIR, "inference_log.csv"), index=False)
-    print(f"  Fase 1 completata. Risultati in: {WORKSPACE_DIR}")
  
 run_zenodo_inference()
 
@@ -109,8 +106,8 @@ def get_next_batch():
     return selected
 
 out = widgets.Output(); img_box = widgets.Output(); lbl = widgets.Label()
-btn_inf = widgets.Button(description="INFORMATIVO", button_style='success')
-btn_non = widgets.Button(description="NON INFORMATIVO", button_style='danger')
+btn_inf = widgets.Button(description="INFORMATIVE", button_style='success')
+btn_non = widgets.Button(description="NON-INFORMATIVE", button_style='danger')
 
 current_batch = []; b_idx = 0
 
@@ -121,7 +118,7 @@ def refresh_ui():
         fname = filenames[current_batch[b_idx]]
         path = os.path.join(WORKSPACE_DIR, "INF", fname)
         if not os.path.exists(path): path = os.path.join(WORKSPACE_DIR, "NON_INF", fname)
-        lbl.value = f"Annotati: {len(annotated_indices)} | Frame corrente: {fname}"
+        lbl.value = f"Annotated: {len(annotated_indices)} | Current Frame: {fname}"
         display(Image.open(path).resize((450, 300)))
 
 def handle_label(label_val):
@@ -151,4 +148,5 @@ btn_inf.on_click(lambda x: handle_label(1))
 btn_non.on_click(lambda x: handle_label(0))
 
 display(widgets.VBox([lbl, img_box, widgets.HBox([btn_inf, btn_non]), out]))
+
 start_al_cycle()
