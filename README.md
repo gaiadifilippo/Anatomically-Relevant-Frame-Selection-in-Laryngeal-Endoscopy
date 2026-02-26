@@ -20,7 +20,9 @@ To ensure the script runs correctly, organize your local environment as follows:
 DATASET:
 
 The framework has been designed to be compatible with the Laryngeal Endoscopy Dataset available on Zenodo.
+
 Source: https://doi.org/10.5281/zenodo.1162784
+
 Instructions: Extract frames from the provided videos and store them in a single folder before running the script.
 
 MODEL BACKBONE:
